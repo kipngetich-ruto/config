@@ -17,24 +17,7 @@ This ensures all system packages are up to date.
 
 ---
 
-## 📌 **2. Essentials (Tools You Always Need)**
-
-```bash
-sudo apt install -y \
-  curl \
-  wget \
-  git \
-  build-essential \
-  software-properties-common \
-  ca-certificates \
-  nano \
-  unzip \
-  htop
-```
-
----
-
-## 📌 **3. Install Node.js (LTS)**
+## 📌 **2. Install Node.js (LTS)**
 
 Use NodeSource (recommended for stability):
 
@@ -62,36 +45,233 @@ npm install -g pnpm
 npm install -g yarn
 ```
 
+You can check on https://nodejs.org/en/download for alternative or updated option
 ---
 
-## 📌 **4. Install GitHub SSH Key**
+Here is the **updated and improved section** for your *Lubuntu Developer Setup Guide* — now including:
 
-Generate SSH key:
+✅ SSH key creation
+✅ SSH key **signing** for Git commits
+✅ Using **two GitHub accounts on the same PC** (perfect for Work + Personal setups)
+
+You can copy–paste into your README.md.
+
+---
+
+# 🔐 **GitHub SSH Key Setup (with Signing + Multi-Account Support)**
+
+This section configures:
+
+* SSH authentication
+* SSH commit signing
+* Support for **multiple GitHub accounts** (e.g., *personal* + *work*)
+* Automatic key loading
+* Proper gitconfig separation
+
+---
+
+# 📌 **3. Generate SSH Keys (One Per GitHub Account)**
+
+## ✔ Generate key for **Personal GitHub**
 
 ```bash
-ssh-keygen -t ed25519 -C "your_email@example.com"
+ssh-keygen -t ed25519 -C "your_personal_email@example.com" -f ~/.ssh/id_ed25519_personal
 ```
 
-Start SSH agent:
+## ✔ Generate key for **Work GitHub**
+
+```bash
+ssh-keygen -t ed25519 -C "your_work_email@company.com" -f ~/.ssh/id_ed25519_work
+```
+
+---
+
+# 📌 **Start SSH Agent & Add Keys**
 
 ```bash
 eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519_personal
+ssh-add ~/.ssh/id_ed25519_work
 ```
 
-Add key:
+To verify:
 
 ```bash
-ssh-add ~/.ssh/id_ed25519
+ssh-add -l
 ```
 
-Copy key to clipboard:
+---
+
+# 📌 **Add SSH Keys to GitHub**
+
+Get your public keys:
+
+### Personal:
 
 ```bash
-cat ~/.ssh/id_ed25519.pub
+cat ~/.ssh/id_ed25519_personal.pub
 ```
 
-Add the public key to GitHub:
-**GitHub → Settings → SSH and GPG keys → New key**
+### Work:
+
+```bash
+cat ~/.ssh/id_ed25519_work.pub
+```
+
+Copy & add each to:
+
+👉 GitHub → Settings → **SSH and GPG keys** → *New Key*
+(Choose appropriate label)
+
+---
+
+# 📌 **Configure SSH to Use Correct Key Per Account**
+
+Edit SSH config:
+
+```bash
+nano ~/.ssh/config
+```
+
+Add this:
+
+```ssh
+# PERSONAL GITHUB ACCOUNT
+Host github.com-personal
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_personal
+    IdentitiesOnly yes
+
+# WORK GITHUB ACCOUNT
+Host github.com-work
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_work
+    IdentitiesOnly yes
+```
+
+Save (CTRL+O → Enter → CTRL+X)
+
+---
+
+# 📌 **Clone Repositories With the Correct Identity**
+
+### 🚀 Personal Repos
+
+```bash
+git clone git@github.com-personal:username/repo.git
+```
+
+### 🚀 Work Repos
+
+```bash
+git clone git@github.com-work:company/repo.git
+```
+
+This ensures the correct SSH key is used automatically.
+
+---
+
+# 📌 ** Configure Git Identity Per Repository**
+
+Inside a **personal repo**:
+
+```bash
+git config user.name "Your Name"
+git config user.email "your_personal_email@example.com"
+```
+
+Inside a **work repo**:
+
+```bash
+git config user.name "Your Work Name"
+git config user.email "your_work_email@company.com"
+```
+
+---
+
+# 📌 ** Enable SSH Signing for Git Commits**
+
+## ✔ Enable signing globally:
+
+```bash
+git config --global gpg.format ssh
+git config --global commit.gpgsign true
+```
+
+## ✔ Personal repo signing:
+
+Inside a personal repo:
+
+```bash
+git config user.signingkey ~/.ssh/id_ed25519_personal.pub
+```
+
+## ✔ Work repo signing:
+
+Inside a work repo:
+
+```bash
+git config user.signingkey ~/.ssh/id_ed25519_work.pub
+```
+
+---
+
+# 📌 **Add Signing Keys to GitHub**
+
+### Personal:
+
+Go to
+**GitHub → Settings → SSH and GPG Keys → New SSH Key → Key Type: Signing Key**
+
+Paste:
+
+```bash
+cat ~/.ssh/id_ed25519_personal.pub
+```
+
+### Work:
+
+Same steps, but use:
+
+```bash
+cat ~/.ssh/id_ed25519_work.pub
+```
+
+---
+
+# 📌 ** Test Signing**
+
+In a repo:
+
+```bash
+git commit -m "test commit"
+```
+
+Then:
+
+```bash
+git log --show-signature -1
+```
+
+You should see:
+
+```
+Good "git" signature for your_name
+```
+
+---
+
+# 📌 **Fix: Load SSH keys automatically on login**
+
+Add to ~/.bashrc or ~/.zshrc:
+
+```bash
+eval "$(ssh-agent -s)" >/dev/null
+ssh-add ~/.ssh/id_ed25519_personal 2>/dev/null
+ssh-add ~/.ssh/id_ed25519_work 2>/dev/null
+```
 
 ---
 
